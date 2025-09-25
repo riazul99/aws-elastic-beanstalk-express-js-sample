@@ -1,5 +1,5 @@
 pipeline {
-  agent none
+  agent any
 
   options {
     timestamps()
@@ -7,27 +7,21 @@ pipeline {
   }
 
   environment {
-    APP_NAME = 'aws-elastic-beanstalk-express-js-sample'
-    DOCKER_IMAGE = "docker.io/riazul99/${APP_NAME}"
-    DOCKER_HOST = 'tcp://dind:2376'
-    DOCKER_CERT_PATH = '/certs/client'
+    APP_NAME      = 'aws-elastic-beanstalk-express-js-sample'
+    DOCKER_IMAGE  = "docker.io/riazul99/${APP_NAME}"
+
+    // talk to the DinD service named 'docker' from docker-compose
+    DOCKER_HOST       = 'tcp://docker:2376'
+    DOCKER_CERT_PATH  = '/certs/client'
     DOCKER_TLS_VERIFY = '1'
   }
 
   stages {
     stage('Checkout') {
-      agent { label 'built-in' }
       steps { checkout scm }
     }
 
-    stage('Install dependencies (Node 16 in container)') {
-      agent {
-        docker {
-          image 'docker:24'
-          args '-v /certs/client:/certs/client:ro --network=project2-compose_jenkins'
-        }
-      }
-      environment { DOCKER_HOST = 'tcp://dind:2376'; DOCKER_CERT_PATH='/certs/client'; DOCKER_TLS_VERIFY='1' }
+    stage('Install dependencies') {
       steps {
         sh '''
           docker run --rm -v "$PWD":/app -w /app node:16 npm install --save
@@ -36,13 +30,6 @@ pipeline {
     }
 
     stage('Unit tests') {
-      agent {
-        docker {
-          image 'docker:24'
-          args '-v /certs/client:/certs/client:ro --network=project2-compose_jenkins'
-        }
-      }
-      environment { DOCKER_HOST = 'tcp://dind:2376'; DOCKER_CERT_PATH='/certs/client'; DOCKER_TLS_VERIFY='1' }
       steps {
         sh '''
           docker run --rm -v "$PWD":/app -w /app node:16 bash -lc 'npm test || echo "No tests available, skipping..."'
@@ -50,15 +37,8 @@ pipeline {
       }
     }
 
-    stage('Security scan (optional Snyk)') {
+    stage('Security scan (Snyk, optional)') {
       when { expression { return env.SNYK_TOKEN != null } }
-      agent {
-        docker {
-          image 'docker:24'
-          args '-v /certs/client:/certs/client:ro --network=project2-compose_jenkins'
-        }
-      }
-      environment { DOCKER_HOST = 'tcp://dind:2376'; DOCKER_CERT_PATH='/certs/client'; DOCKER_TLS_VERIFY='1' }
       steps {
         withCredentials([string(credentialsId: 'snyk-token', variable: 'SNYK_TOKEN')]) {
           sh '''
@@ -73,13 +53,6 @@ pipeline {
     }
 
     stage('Build Docker image') {
-      agent {
-        docker {
-          image 'docker:24'
-          args '-v /certs/client:/certs/client:ro --network=project2-compose_jenkins'
-        }
-      }
-      environment { DOCKER_HOST = 'tcp://dind:2376'; DOCKER_CERT_PATH='/certs/client'; DOCKER_TLS_VERIFY='1' }
       steps {
         sh '''
           docker version
@@ -89,13 +62,6 @@ pipeline {
     }
 
     stage('Push Docker image') {
-      agent {
-        docker {
-          image 'docker:24'
-          args '-v /certs/client:/certs/client:ro --network=project2-compose_jenkins'
-        }
-      }
-      environment { DOCKER_HOST = 'tcp://dind:2376'; DOCKER_CERT_PATH='/certs/client'; DOCKER_TLS_VERIFY='1' }
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
