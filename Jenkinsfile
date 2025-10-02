@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_REPO = "riazul99/aws-elastic-beanstalk-express-js-sample"
-        DOCKERHUB_CREDENTIALS = "dockerhub-credentials"
+        DOCKERHUB_CREDENTIALS = "dockerhub-creds"
         TIMESTAMP = "${new Date().format('yyyyMMddHHmmss')}"
     }
 
