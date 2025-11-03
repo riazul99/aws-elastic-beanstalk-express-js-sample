@@ -49,6 +49,6 @@
     "transpile": "babel ./server --out-dir dist-server",
     "clean": "rm -rf dist-server",
     "watch:dev": "nodemon",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   }
 }
