@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
-const port = 8080;
+// const port = 8080;
+const port = process.env.PORT || 8080;
 
 app.get('/', (req, res) => res.send('My Student ID is 21948783. Welcome to Express'));
 
